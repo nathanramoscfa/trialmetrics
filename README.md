@@ -86,7 +86,7 @@ We solve the **fragmentation problem**: teams currently juggle SAS/R for statist
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/trialmetrics.git
+git clone https://github.com/nathanramoscfa/trialmetrics.git
 cd trialmetrics
 
 # Create conda environment
