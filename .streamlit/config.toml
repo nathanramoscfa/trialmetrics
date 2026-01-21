@@ -1,0 +1,11 @@
+[browser]
+# Disable usage statistics collection
+gatherUsageStats = false
+
+[server]
+# Automatically open browser when app starts
+headless = false
+
+[runner]
+# Silence first-run email prompt
+magicEnabled = false
