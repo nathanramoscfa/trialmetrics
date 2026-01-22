@@ -537,8 +537,8 @@ def render_enrollment_chart(trial: dict):
         x=list(forecast['date']) + list(forecast['date'][::-1]),
         y=list(forecast['ci_upper']) + list(forecast['ci_lower'][::-1]),
         fill='toself',
-        fillcolor='rgba(59, 130, 246, 0.15)',
-        line=dict(color='rgba(255,255,255,0)'),
+        fillcolor='rgba(59, 130, 246, 0.35)',
+        line=dict(color='rgba(59, 130, 246, 0.5)'),
         name='95% CI',
         showlegend=True
     ))
