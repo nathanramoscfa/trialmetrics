@@ -52,8 +52,8 @@ htmlcov/
 Thumbs.db
 
 # Project specific
-demo_video.mp4
 demo_script.txt
 generate_voiceover.py
+generate_voiceover_5min.py
+demo_script_5min.md
 voiceover/
-presentation/*.pptx

@@ -152,7 +152,7 @@ trialmetrics/
 
 ## 🎬 Demo
 
-📹 **Demo Video:** [Watch on YouTube](https://youtu.be/An5PCmHWlrY)
+📹 **Demo Video:** [Watch on YouTube](https://youtu.be/An5PCmHWlrY) | [Download MP4](trialmetrics_demo.mp4)
 
 ---
 
