@@ -154,6 +154,8 @@ trialmetrics/
 
 📹 **Demo Video:** [Watch on YouTube](https://youtu.be/An5PCmHWlrY) | [Download MP4](trialmetrics_demo.mp4)
 
+📊 **Presentation:** [Google Slides](https://docs.google.com/presentation/d/1cXv1IQv9UJOncSECvgN7fueSm_xk8a6bNE8uPPmP6uc/edit?usp=sharing)
+
 ---
 
 ## 👤 Team
