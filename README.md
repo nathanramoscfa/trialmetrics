@@ -4,7 +4,9 @@
 
 A unified dashboard that combines real-time statistical power analysis, enrollment forecasting, and budget tracking for clinical trials — bringing portfolio management discipline to clinical research.
 
-![TrialMetrics Dashboard](screenshots/dashboard.png)
+![TrialMetrics Dashboard - Top](screenshots/dashboard.png)
+
+![TrialMetrics Dashboard - Bottom](screenshots/dashboard2.png)
 
 ---
 
