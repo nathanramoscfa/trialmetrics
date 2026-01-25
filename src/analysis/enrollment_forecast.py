@@ -14,7 +14,8 @@ def generate_synthetic_enrollment(
     days_elapsed: int,
     enrollment_rate: float = 0.8,
     noise_std: float = 0.15,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
+    final_enrollment: Optional[int] = None
 ) -> pd.DataFrame:
     """Generate synthetic enrollment data for testing/demo.
 
@@ -29,6 +30,8 @@ def generate_synthetic_enrollment(
         enrollment_rate: Fraction of "ideal" daily rate (1.0 = on track).
         noise_std: Standard deviation of noise as fraction of mean.
         seed: Random seed for reproducibility.
+        final_enrollment: If provided, the enrollment at day `days_elapsed`
+            will be exactly this value. Overrides enrollment_rate.
 
     Returns:
         pd.DataFrame: Enrollment history with columns:
@@ -40,7 +43,43 @@ def generate_synthetic_enrollment(
     if seed is not None:
         np.random.seed(seed)
 
-    # Calculate ideal daily rate assuming 1.5-year completion
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+
+    # If final_enrollment specified, generate smooth trajectory to that
+    if final_enrollment is not None and days_elapsed > 0:
+        # Generate smooth cumulative trajectory with noise
+        # Use a slightly curved trajectory for realism
+        t = np.linspace(0, 1, days_elapsed + 1)
+        # Add slight S-curve shape (slower start, faster middle, slower end)
+        curve = t ** 0.9  # Slightly concave for realistic ramp-up
+        base_trajectory = curve * final_enrollment
+
+        # Add random walk noise while keeping monotonic increase
+        noise = np.cumsum(np.random.randn(days_elapsed + 1) * 0.3)
+        noise = noise - noise[-1]  # Ensure noise ends at 0
+        noisy_trajectory = base_trajectory + noise * (final_enrollment * 0.05)
+
+        # Ensure monotonic and within bounds
+        enrolled_arr = np.maximum.accumulate(noisy_trajectory)
+        enrolled_arr = np.clip(enrolled_arr, 0, final_enrollment)
+        enrolled_arr = np.round(enrolled_arr).astype(int)
+        enrolled_arr[0] = 0
+        enrolled_arr[-1] = final_enrollment  # Ensure exact final value
+
+        # Build DataFrame
+        dates = [start + timedelta(days=d) for d in range(days_elapsed + 1)]
+        days_list = list(range(days_elapsed + 1))
+        enrolled_list = enrolled_arr.tolist()
+        daily_list = [0] + list(np.diff(enrolled_arr))
+
+        return pd.DataFrame({
+            "date": dates,
+            "day": days_list,
+            "enrolled": enrolled_list,
+            "daily": daily_list
+        })
+
+    # Original Poisson-based generation
     ideal_daily_rate = target / 547  # ~1.5 years
     actual_rate = ideal_daily_rate * enrollment_rate
 
@@ -50,7 +89,6 @@ def generate_synthetic_enrollment(
     daily = []
 
     cumulative = 0
-    start = datetime.strptime(start_date, "%Y-%m-%d")
 
     for d in range(days_elapsed + 1):
         if d == 0:
@@ -275,6 +313,7 @@ def generate_forecast_series(
 
     # Forecast data
     last_day = enrollment_history["day"].max()
+    last_enrolled = enrollment_history["enrolled"].iloc[-1]
     start_date = enrollment_history["date"].iloc[0]
 
     forecast_days_range = range(last_day + 1, last_day + forecast_days + 1)
@@ -282,22 +321,29 @@ def generate_forecast_series(
         start_date + timedelta(days=d) for d in forecast_days_range
     ]
 
-    # Point forecast
-    forecast_enrolled = [
-        min(target_enrollment, beta_0 + beta_1 * d)
-        for d in forecast_days_range
-    ]
+    # Point forecast - anchor to last_enrolled and project forward with slope
+    # This ensures continuity between actual and forecast
+    forecast_enrolled = []
+    for d in forecast_days_range:
+        days_ahead = d - last_day
+        projected = last_enrolled + beta_1 * days_ahead
+        forecast_enrolled.append(min(target_enrollment, max(0, projected)))
 
     # Confidence intervals (approximate)
+    # Uncertainty grows from the last observed point, not from day 0
     z = 1.96  # 95% CI
-    ci_lower = [
-        max(0, beta_0 + (beta_1 - z * se_beta_1) * d)
-        for d in forecast_days_range
-    ]
-    ci_upper = [
-        min(target_enrollment * 1.2, beta_0 + (beta_1 + z * se_beta_1) * d)
-        for d in forecast_days_range
-    ]
+    ci_lower = []
+    ci_upper = []
+    for i, d in enumerate(forecast_days_range):
+        point = forecast_enrolled[i]
+        # Uncertainty grows with days ahead from last observation
+        days_ahead = d - last_day
+        uncertainty = z * se_beta_1 * days_ahead
+        # Cap CI to reasonable bounds: [last_enrolled, target]
+        lower = max(last_enrolled * 0.9, point - uncertainty)
+        upper = min(target_enrollment, point + uncertainty)
+        ci_lower.append(lower)
+        ci_upper.append(upper)
 
     forecast = pd.DataFrame({
         "date": forecast_dates,

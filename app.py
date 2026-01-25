@@ -458,8 +458,13 @@ def render_budget_chart(budget_result):
     return fig
 
 
-def render_enrollment_chart(trial: dict):
-    """Render enrollment forecast chart."""
+def render_enrollment_chart(trial: dict, enrollment_actual: int):
+    """Render enrollment forecast chart.
+
+    Args:
+        trial: Trial data dictionary.
+        enrollment_actual: Current actual enrollment count.
+    """
     # Generate synthetic data for demo
     # NOTE: ClinicalTrials.gov doesn't provide historical enrollment data
     # We simulate a realistic trajectory for demonstration purposes
@@ -486,21 +491,13 @@ def render_enrollment_chart(trial: dict):
     # Cap at reasonable range (don't simulate more than 3 years back)
     days_elapsed = min(max(days_since_start, 30), 1095)
 
-    # Estimate enrollment rate based on current progress
-    # Assume we're at ~60% of target for demo purposes
-    simulated_current = int(target * 0.6)
-    if days_elapsed > 0:
-        enrollment_rate = simulated_current / (target / 547 * days_elapsed)
-    else:
-        enrollment_rate = 0.7
-
-    # Generate synthetic enrollment history
+    # Generate synthetic enrollment history ending at actual enrollment
     history = generate_synthetic_enrollment(
         start_date=start_date_str,
         target=target,
         days_elapsed=days_elapsed,
-        enrollment_rate=min(enrollment_rate, 1.2),
-        seed=hash(trial.get('nct_id', '')) % 10000
+        seed=hash(trial.get('nct_id', '')) % 10000,
+        final_enrollment=enrollment_actual
     )
 
     # Generate forecast series
@@ -722,7 +719,7 @@ def main():
 
             # ROW 3: Enrollment Forecast
             st.markdown("---")
-            enrollment_fig = render_enrollment_chart(trial)
+            enrollment_fig = render_enrollment_chart(trial, enrollment_actual)
             st.plotly_chart(enrollment_fig, use_container_width=True)
 
             # ROW 4: Trial Details and AI Summary
